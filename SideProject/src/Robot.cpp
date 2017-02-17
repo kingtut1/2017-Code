@@ -13,27 +13,30 @@
 class Robot: public SampleRobot
 {
 
-	Talon *left1, *left2, *right1, *right2;//Drive train motors
-	Joystick *left, *right, *controller; // only joystick
+	Talon *LeftFront , LeftBack, *RightFront, *RightBack;//Drive train motors
+	Talon *intake;
+	Joystick *controller; // only joystick
 	RobotDrive *drive; // robot drive system
-	SendableChooser *chooser;
-	DoubleSolenoid *shifter;
-	const std::string autoNameDefault = "Default";
-	const std::string autoNameCustom = "My Auto";
+	DigitalInput *ballStop;
+	//const std::string autoNameDefault = "Default";
+	//const std::string autoNameCustom = "My Auto";
 
 
 
 public:
 	void RobotInit() override{
 
-		controller = new Joystick(0);
 		//Drive train motors
-		left1 = new Talon(1);//LF
-		left2 = new Talon(0);//LB
-		right1 = new Talon(2);//RF
-		right2 = new Talon(3);//RB
+		LeftFront = new Talon(1);//LF
+		LeftBack = new Talon(0);//LB
+		RightFront = new Talon(2);//RF
+		RightBack = new Talon(3);//RB
+		intake = new Talon(4);
+		controller = new Joystick(0);
+		drive = new RobotDrive(LeftFront, LeftBack, RightFront, RightBack);
+		ballStop = new DigitalInput(1);
 
-		drive = new RobotDrive(left1,left2,right1,right2);
+
 	}
 
 	/**
@@ -79,12 +82,27 @@ public:
 		//myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
+					//Buttons
+			double leftBumper = controller->GetRawAxis(2);
+			double rightBumper = controller->GetRawAxis(3);
+			double xButton = controller->GetRawButton(3);
 					//Driving with controller
 			double leftValue = (-1 * controller->GetRawAxis(1));
 			double rightValue = (-1 * controller->GetRawAxis(5));
 			drive->TankDrive(leftValue,rightValue);
-
-
+			if(xButton)
+			{
+				//This stops the intake
+				intake->Set(0.0);
+			}
+			else if(leftBumper)
+			{
+				intake->Set(.50);
+			}
+			else if(rightBumper)
+			{
+				intake->Set(-.50);
+			}
 			Wait(0.005);				// wait for a motor update time
 		}
 	}
