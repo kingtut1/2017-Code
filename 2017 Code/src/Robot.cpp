@@ -13,6 +13,7 @@
 #include <SmartDashboard/SmartDashboard.h>
 #include <RobotDrive.h>
 #include <Timer.h>
+#include <Compressor.h>
 
 #define FORWARD 1
 #define BACKWARD -1
@@ -36,10 +37,18 @@ class Robot: public frc::SampleRobot {
 	frc::VictorSP *intakeMotor, *shooterMotor, *indexerMotor, *agitatorMotor, *climberMotor;
 	frc::Joystick *controller;
 	frc::RobotDrive *sigmaDrive, *boostDrive;
-	frc::DoubleSolenoid *sigmaShifter;
+	frc::DoubleSolenoid *sigmaShifter, *sigmaGearPush;
 	frc::SmartDashboard *SmartDashboard;
 	frc::ADXRS450_Gyro *gyro;
 	frc::Encoder *rightEncoder, *leftEncoder;
+	frc::Compressor *compressor;
+	frc::SendableChooser<std::string> chooser;
+	const std::string Default = "Red Center";
+	const std::string RedPosition1 = "Red Right";
+	const std::string RedPosition3 = "Red Left";
+	const std::string BluePosition1 = "Blue Right";
+	const std::string BluePosition2 = "Blue Center";
+	const std::string BluePosition3 = "Blue Left";
 public:
 
 	void RobotInit() {
@@ -53,15 +62,27 @@ public:
 		shooterMotor = new VictorSP(5); // Motor w/ blue sticker
 		agitatorMotor = new VictorSP(1); // Motor w/ yellow green sticker
 		indexerMotor = new VictorSP(3);  // Motor w/ Orange sticker
-		//climberMotor = new VictorSP()//Motor w/yellow sticker
+		climberMotor = new VictorSP(6);  //Motor w/yellow sticker
 		controller = new Joystick(0);
 		sigmaDrive = new RobotDrive(rightFront, rightBack, leftFront, leftBack);
 		boostDrive = new RobotDrive(rightTop, leftTop);
 	//	rightEncoder new Encoder;
 	//	leftEncoder = new Encoder;
+        compressor = new Compressor(0);
 	//	CameraServer::GetInstance()->StartAutomaticCapture();
-		//sigmaShifter = new DoubleSolenoid(0,1);
+		sigmaShifter = new DoubleSolenoid(0,1);
+		sigmaGearPush = new DoubleSolenoid(4,5);
+		std::cout << "Im Enabled please help meeeeeee!!!!!!!" << std::endl;
+		chooser.AddDefault(Default, Default);
+		chooser.AddObject(RedPosition1, RedPosition1);
+		chooser.AddObject(RedPosition3, RedPosition3);
+		chooser.AddObject(BluePosition1, BluePosition1);
+		chooser.AddObject(BluePosition2, BluePosition2);
+		chooser.AddObject(BluePosition3, BluePosition3);
+		frc::SmartDashboard::PutData("Autonomous Modes", &chooser);
 
+		compressor->SetClosedLoopControl(true);
+	//	CameraServer::GetInstance()->StartAutomaticCapture();
 	}
 	void LowGear()
 	{
@@ -142,8 +163,32 @@ public:
 	 */
 	void Autonomous()
 	{
-
-
+		auto autonomousSelected = chooser.GetSelected();
+		if(autonomousSelected == Default)
+		{
+			//Running Default Autonomous Red Center
+			std::cout << "Default Autonomous Running: Red Center" << std::endl;
+		}
+		else if(autonomousSelected == RedPosition1)
+		{
+			//Running RedRight Autonomous
+		}
+		else if(autonomousSelected == RedPosition3)
+		{
+			//Running RedLeft Autonomous
+		}
+		else if(autonomousSelected == BluePosition1)
+		{
+			//Running BlueLeft Autonomous
+		}
+		else if(autonomousSelected == BluePosition2)
+		{
+			//Running BlueCenter Autonomous
+		}
+		else if(autonomousSelected == BluePosition3)
+		{
+			//Running BlueRight Autonomous
+		}
 		//Enter code here
 	}
 
@@ -164,10 +209,12 @@ public:
 						//Buttons
 			double A = (controller->GetRawButton(1));
 			double X = (controller->GetRawButton(3));
-			//double LT = (controller->GetRawAxis(2));
+			double LT = (controller->GetRawAxis(2));
 			double RB = (controller->GetRawButton(6));
 			double LB = (controller->GetRawButton(5));
 			double RT = (controller->GetRawAxis(3));
+			double Y = (controller->GetRawButton(4));
+
 			sigmaDrive->TankDrive(leftValue, rightValue);
 			boostDrive->TankDrive(leftValue, rightValue);
 			/*
@@ -189,8 +236,34 @@ public:
 				frc::Wait(.001);
 				firstTimeInX = 1;
 			}
-			else if(RT >= 0.1)
+
+			if(LT >= 0.1)
 			{
+				LowGear();
+			}
+			 else
+			{
+				HighGear();
+			}
+
+			if(Y == 1)
+			{
+				climberMotor->Set(-0.98);
+			}
+			else
+			{
+				climberMotor->Set(0.0);
+			}
+			if(A == 1)
+			{
+				sigmaGearPush->Set(DoubleSolenoid::kReverse);
+			}
+			else
+			{
+				sigmaGearPush->Set(DoubleSolenoid::kForward);
+			}
+			 if(RT >= 0.1)
+			 {
 				shooterMotor->Set(0.635);
 				if (firstTimeInX == 1)
 				{
@@ -211,17 +284,16 @@ public:
 				agitatorMotor->Set(0.0);
 				firstTimeInX = 1;
 			}
-			/*
-			 * if(RT >= 0.9)
-			 * {
-			 *
-			 * }
-			if(LT >= 0.1)
+
+			// This is the code for shifting gears
+
+			/*if(LT >= 0.1)
 			{
 				LowGear();
 			}
 			else
 			{
+				// for the code stated above
 				HighGear();
 			}
 			*/

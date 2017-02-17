@@ -11,7 +11,6 @@ namespace frc {
 
 Option::Option() {
 	// TODO Auto-generated constructor stub
-
 }
 
 Option::~Option() {
